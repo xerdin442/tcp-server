@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -66,17 +67,18 @@ func (s *Server) acceptLoop() {
 func (s *Server) readLoop(conn net.Conn) {
 	defer conn.Close()
 
-	buf := make([]byte, 2048)
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Printf("Connection interrupted: %s\n", conn.RemoteAddr().String())
-			return
-		}
+	scanner := bufio.NewScanner(conn)
 
-		msg := buf[:n]
-		fmt.Println(string(msg))
+	for scanner.Scan() {
+		msg := scanner.Text()
+		fmt.Printf("Received from %v: %s\n", conn.RemoteAddr(), msg)
 	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Read error: %v\n", err)
+	}
+
+	fmt.Printf("Connection closed: %s\n", conn.RemoteAddr())
 }
 
 func main() {
